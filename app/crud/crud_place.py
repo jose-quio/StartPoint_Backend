@@ -93,3 +93,10 @@ def build_place_read(place: Place, user_id: int | None = None) -> PlaceRead:
         review_count=review_count,
         is_favorite=is_favorite,
     )
+
+def get_places_by_owner(db: Session, owner_id: int) -> list[Place]:
+    return db.query(Place).filter(Place.owner_id == owner_id).all()
+
+
+def get_pending_places(db: Session) -> list[Place]:
+    return db.query(Place).filter(Place.status == PlaceStatus.PENDING).all()

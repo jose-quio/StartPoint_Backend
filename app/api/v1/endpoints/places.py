@@ -10,6 +10,8 @@ from app.crud.crud_place import (
     update_place,
     update_place_status,
     build_place_read,
+    get_places_by_owner,
+    get_pending_places,
 )
 from app.models.place import PlaceStatus
 from app.models.user import User, UserRole
@@ -36,6 +38,23 @@ def list_places(
     user_id = current_user.id if current_user else None
     return [build_place_read(p, user_id) for p in places]
 
+
+@router.get("/mine/list", response_model=list[PlaceRead])
+def list_my_places(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    places = get_places_by_owner(db, current_user.id)
+    return [build_place_read(p, current_user.id) for p in places]
+
+
+@router.get(
+    "/moderation/pending",
+    response_model=list[PlaceRead],
+    dependencies=[Depends(require_role(UserRole.MODERATOR))],
+)
+def list_pending_places(db: Session = Depends(get_db)):
+    places = get_pending_places(db)
+    return [build_place_read(p) for p in places]
 
 @router.get("/{place_id}", response_model=PlaceRead)
 def get_place_detail(
