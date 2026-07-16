@@ -2,7 +2,9 @@ from pydantic import BaseModel, ConfigDict
 
 from app.models.place import PlaceStatus
 from app.schemas.category import CategoryRead
-
+from app.schemas.image import PlaceImageRead
+from app.schemas.schedule import PlaceScheduleRead
+from app.schemas.service import ServiceRead
 
 class PlaceBase(BaseModel):
     name: str
@@ -39,3 +41,9 @@ class PlaceRead(PlaceBase):
     status: PlaceStatus
     owner_id: int
     category: CategoryRead
+    images: list[PlaceImageRead] = []
+    services: list[ServiceRead] = []
+    schedules: list[PlaceScheduleRead] = []
+    average_rating: float | None = None
+    review_count: int = 0
+    is_favorite: bool = False

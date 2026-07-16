@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.models.place import Place, PlaceStatus
 from app.schemas.place import PlaceCreate, PlaceUpdate
-
+from app.schemas.place import PlaceRead
 
 def get_place(db: Session, place_id: int) -> Place | None:
     return db.query(Place).filter(Place.id == place_id).first()
@@ -60,3 +60,36 @@ def update_place_status(db: Session, db_place: Place, status: PlaceStatus) -> Pl
 def delete_place(db: Session, db_place: Place) -> None:
     db.delete(db_place)
     db.commit()
+
+def build_place_read(place: Place, user_id: int | None = None) -> PlaceRead:
+    review_count = len(place.reviews)
+    average_rating = (
+        round(sum(r.rating for r in place.reviews) / review_count, 1)
+        if review_count
+        else None
+    )
+    is_favorite = (
+        any(f.user_id == user_id for f in place.favorites)
+        if user_id is not None
+        else False
+    )
+
+    return PlaceRead(
+        id=place.id,
+        name=place.name,
+        description=place.description,
+        price=place.price,
+        latitude=place.latitude,
+        longitude=place.longitude,
+        address=place.address,
+        category_id=place.category_id,
+        status=place.status,
+        owner_id=place.owner_id,
+        category=place.category,
+        images=place.images,
+        services=place.services,
+        schedules=place.schedules,
+        average_rating=average_rating,
+        review_count=review_count,
+        is_favorite=is_favorite,
+    )

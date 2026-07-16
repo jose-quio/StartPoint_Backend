@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, get_db, require_role
+from app.api.deps import get_current_user, get_db, require_role, get_current_user_optional
 from app.crud.crud_place import (
     create_place,
     delete_place,
@@ -9,6 +9,7 @@ from app.crud.crud_place import (
     get_places,
     update_place,
     update_place_status,
+    build_place_read,
 )
 from app.models.place import PlaceStatus
 from app.models.user import User, UserRole
@@ -26,26 +27,27 @@ def list_places(
     skip: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
 ):
-    # Público: solo ve lugares aprobados
-    return get_places(
-        db,
-        category_id=category_id,
-        min_price=min_price,
-        max_price=max_price,
-        search=search,
-        status=PlaceStatus.APPROVED,
-        skip=skip,
-        limit=limit,
+    places = get_places(
+        db, category_id=category_id, min_price=min_price, max_price=max_price,
+        search=search, status=PlaceStatus.APPROVED, skip=skip, limit=limit,
     )
+    user_id = current_user.id if current_user else None
+    return [build_place_read(p, user_id) for p in places]
 
 
 @router.get("/{place_id}", response_model=PlaceRead)
-def get_place_detail(place_id: int, db: Session = Depends(get_db)):
+def get_place_detail(
+    place_id: int,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
+):
     db_place = get_place(db, place_id)
     if not db_place:
         raise HTTPException(status_code=404, detail="Lugar no encontrado")
-    return db_place
+    user_id = current_user.id if current_user else None
+    return build_place_read(db_place, user_id)
 
 
 @router.post(
